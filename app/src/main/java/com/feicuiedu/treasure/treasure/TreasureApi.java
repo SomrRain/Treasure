@@ -11,7 +11,7 @@ import retrofit2.http.POST;
  */
 
 public interface TreasureApi {
-    @POST("/Handler/TreasureHandler.ashx?action=hide")
+    @POST("/Handler/TreasureHandler.ashx?action=show")
     Call<List<Treasure>> getTreasureInArea(@Body Area  area);
 
 }

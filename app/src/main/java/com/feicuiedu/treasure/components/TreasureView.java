@@ -1,16 +1,18 @@
 package com.feicuiedu.treasure.components;
 
 import android.content.Context;
+import java.text.DecimalFormat;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.baidu.mapapi.model.LatLng;
+import com.baidu.mapapi.utils.DistanceUtil;
 import com.feicuiedu.treasure.R;
 import com.feicuiedu.treasure.treasure.Treasure;
-
-import java.text.DecimalFormat;
+import com.feicuiedu.treasure.treasure.home.map.MapFragment;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -45,5 +47,19 @@ public class TreasureView extends RelativeLayout{
     private void init() {
         LayoutInflater.from(getContext()).inflate(R.layout.view_treasure,this,true);
         ButterKnife.bind(this);
+    }
+    public  void  bindTreasure(@NonNull Treasure  treasure){
+        tvTitle.setText(treasure.getTitle());
+        tvLocation.setText(treasure.getLocation());
+        double  distance=0.00d;
+        LatLng  myLocation = MapFragment.getMyLocation();
+        if(myLocation==null){
+            distance=0.00d;
+        }
+        LatLng  tar=new LatLng(treasure.getLatitude(),treasure.getLongitude());
+        distance= DistanceUtil.getDistance(tar,myLocation);
+        DecimalFormat decimalFormat = new DecimalFormat("#0.00");
+        String text = decimalFormat.format(distance/1000)+"km";
+        tv_Distance.setText(text);
     }
 }

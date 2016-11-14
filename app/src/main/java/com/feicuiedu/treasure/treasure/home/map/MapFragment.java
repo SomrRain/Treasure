@@ -36,6 +36,8 @@ import com.feicuiedu.treasure.commons.ActivityUtils;
 import com.feicuiedu.treasure.components.TreasureView;
 import com.feicuiedu.treasure.treasure.Area;
 import com.feicuiedu.treasure.treasure.Treasure;
+import com.feicuiedu.treasure.treasure.TreasureRepo;
+import com.feicuiedu.treasure.treasure.home.detail.TreasureDetailActivity;
 
 import java.util.List;
 
@@ -72,7 +74,7 @@ public class MapFragment extends Fragment implements MapMvpView {
     private BaiduMap baiduMap;
     private Unbinder bind;
     private LocationClient locationClient;
-    private LatLng myLocation;
+    private static LatLng myLocation;
     private boolean isFirst = true;
     private LatLng target;
     private ActivityUtils activityUtils;
@@ -260,7 +262,7 @@ public class MapFragment extends Fragment implements MapMvpView {
         baiduMap.addOverlay(options);
     }
 
-    @OnClick({R.id.tv_located, R.id.tv_compass,R.id.iv_scaleUp, R.id.iv_scaleDown})
+    @OnClick({R.id.tv_located, R.id.tv_compass, R.id.iv_scaleUp, R.id.iv_scaleDown})
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.tv_located:
@@ -283,25 +285,83 @@ public class MapFragment extends Fragment implements MapMvpView {
         boolean isCompass = baiduMap.getUiSettings().isCompassEnabled();
         baiduMap.getUiSettings().setCompassEnabled(!isCompass);
     }
-private Marker  currentMarker;
-    private  BaiduMap.OnMarkerClickListener  markerListener=new BaiduMap.OnMarkerClickListener() {
+
+    private Marker currentMarker;
+    private BaiduMap.OnMarkerClickListener markerListener = new BaiduMap.OnMarkerClickListener() {
         @Override
         public boolean onMarkerClick(Marker marker) {
-            if(currentMarker!=null){
+            if (currentMarker != null) {
                 currentMarker.setVisible(true);
             }
-            currentMarker=marker;
+            currentMarker = marker;
             currentMarker.setVisible(false);
-            InfoWindow  infowindow=  new InfoWindow(dot_click,marker.getPosition(),0,infoWindowListener);
+            InfoWindow infowindow = new InfoWindow(dot_click, marker.getPosition(), 0, infoWindowListener);
             baiduMap.showInfoWindow(infowindow);
+            int id = marker.getExtraInfo().getInt("id");
+            Treasure trea = TreasureRepo.getInstance().getTreasure(id);
+            treasureView.bindTreasure(trea);
+            changeUIMode(UI_MODE_SECLECT);
             return false;
         }
     };
-    private  InfoWindow.OnInfoWindowClickListener  infoWindowListener=new InfoWindow.OnInfoWindowClickListener() {
+    private InfoWindow.OnInfoWindowClickListener infoWindowListener = new InfoWindow.OnInfoWindowClickListener() {
         @Override
         public void onInfoWindowClick() {
-
+            changeUIMode(UI_MODE_NORMAL);
         }
     };
+    private static final int UI_MODE_NORMAL = 0;
+    private static final int UI_MODE_SECLECT = 1;
+    private static final int UI_MODE_HIDE = 2;
 
+    private int nowMode = UI_MODE_NORMAL;
+
+    private void changeUIMode(int uiMode) {
+        if (nowMode == uiMode) {
+            return;
+        }
+        nowMode = uiMode;
+        switch (uiMode) {
+            case UI_MODE_NORMAL:
+                if (currentMarker != null) {
+                    currentMarker.setVisible(true);
+                }
+                baiduMap.hideInfoWindow();
+                layoutBottom.setVisibility(View.GONE);
+                centerLayout.setVisibility(View.GONE);
+                break;
+            case UI_MODE_HIDE:
+                centerLayout.setVisibility(View.VISIBLE);
+                layoutBottom.setVisibility(View.GONE);
+                btnHideHere.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        layoutBottom.setVisibility(View.VISIBLE);
+                        hideTreasure.setVisibility(View.VISIBLE);
+                        treasureView.setVisibility(View.GONE);
+                    }
+                });
+                break;
+            case UI_MODE_SECLECT:
+                layoutBottom.setVisibility(View.VISIBLE);
+                treasureView.setVisibility(View.VISIBLE);
+                centerLayout.setVisibility(View.GONE);
+                hideTreasure.setVisibility(View.GONE);
+                break;
+
+
+        }
+    }
+
+    public static LatLng getMyLocation() {
+        return myLocation;
+    }
+
+    @OnClick(R.id.treasureView)
+    public void onClick_treasureView() {
+        int  id=currentMarker.getExtraInfo().getInt("id");
+        Treasure  treasure  =TreasureRepo.getInstance().getTreasure(id);
+        TreasureDetailActivity.start(getContext(),treasure);
+
+    }
 }
